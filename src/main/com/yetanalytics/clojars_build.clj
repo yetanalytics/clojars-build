@@ -1,6 +1,11 @@
 (ns com.yetanalytics.clojars-build
-  (:require [clojure.tools.build.api :as b]
+  (:require [clojure.spec.alpha :as s]
+            [clojure.tools.build.api :as b]
             [deps-deploy.deps-deploy :as dd]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Defaults
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def default-group-id "com.yetanalytics")
 
@@ -11,6 +16,10 @@
 (def default-license-name "Apache-2.0")
 
 (def default-license-url "https://www.apache.org/licenses/LICENSE-2.0.txt")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helpers + Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- basis []
   (b/create-basis {}))
@@ -31,6 +40,52 @@
 
 (defn- github-dev-conn [github-repo]
   (format "scm:git:ssh://git@github.com/%s.git" github-repo))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Keep specs super-simple since this will mainly be used with GitHub Actions
+;; and other dev stuff.
+
+(defn- non-empty-string? [s]
+  (boolean (and (string? s)
+                (not-empty s))))
+
+(s/def ::group-id non-empty-string?)
+(s/def ::artifact-id non-empty-string?)
+(s/def ::version non-empty-string?)
+(s/def ::src-dirs (s/coll-of non-empty-string? :min-count 1))
+(s/def ::resource-dirs (s/coll-of non-empty-string?))
+(s/def ::license-name non-empty-string?)
+(s/def ::license-url non-empty-string?)
+(s/def ::github-repo non-empty-string?)
+(s/def ::github-sha non-empty-string?)
+
+(s/def ::jar-input
+  (s/keys :req-un [::artifact-id
+                   ::version
+                   ::github-repo
+                   ::github-sha]
+          :opt-un [::group-id
+                   ::src-dirs
+                   ::resource-dirs
+                   ::license-name
+                   ::license-url]))
+
+(s/def ::deploy-input
+  (s/keys :req-un [::artifact-id
+                   ::version]
+          :opt-un [::group-id]))
+
+(defn- assert-opts [spec opts]
+  (when-some [err (s/explain-data spec opts)]
+    (throw (ex-info (str "Inputs do not conform to spec: " spec)
+                    err))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Public Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn jar
   "Create the JAR file that will be deployed onto Clojars.
@@ -59,7 +114,9 @@
          src-dirs      default-src-dirs
          resource-dirs default-resource-dirs
          license-name  default-license-name
-         license-url   default-license-url}}]
+         license-url   default-license-url}
+    :as opts}]
+  (assert-opts ::jar-input opts)
   (let [all-dirs (vec (concat src-dirs resource-dirs))
         lib-name (library-name group-id artifact-id)
         lib-sym  (symbol lib-name)
@@ -104,14 +161,17 @@
   [{:keys [group-id
            artifact-id
            version]
-    :or {group-id default-group-id}}]
+    :or {group-id default-group-id}
+    :as opts}]
+  (assert-opts ::deploy-input opts)
   (let [lib-name (library-name group-id artifact-id)
         lib-sym  (symbol lib-name)
         jar-name (jar-file-name artifact-id version)]
     (dd/deploy {:installer :remote
                 :artifact  (b/resolve-path jar-name)
                 :pom-file  (b/pom-path {:lib       lib-sym
-                                        :class-dir class-dir})})))
+                                        :class-dir class-dir})})
+    nil))
 
 (comment
   ;; These comments both demonstrate the usage of `jar` and `deploy`,
