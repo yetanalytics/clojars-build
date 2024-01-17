@@ -172,19 +172,3 @@
                 :pom-file  (b/pom-path {:lib       lib-sym
                                         :class-dir class-dir})})
     nil))
-
-(comment
-  ;; These comments both demonstrate the usage of `jar` and `deploy`,
-  ;; and can be used to build and deploy this very library to Clojars.
-
-  (jar
-   {:artifact-id   "action-deploy-clojars"
-    :version       "2.0.0-SNAPSHOT"
-    :src-dirs      ["src/main"]
-    :resource-dirs []
-    :github-repo   "yetanalytics/action-deploy-clojars"
-    :github-sha    "6997fb7a489a938b1cb743830e5db6cb2cbd7931"})
-  
-  (deploy
-   {:artifact-id "action-deploy-clojars"
-    :version     "2.0.0-SNAPSHOT"}))
