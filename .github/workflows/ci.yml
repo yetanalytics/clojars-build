@@ -19,3 +19,9 @@ jobs:
       
       - name: Test build
         run: make test-build
+      
+      - name: Test deploy
+        run: make test-deploy
+        env:
+          CLOJARS_USERNAME: ${{ inputs.clojars-username }}
+          CLOJARS_PASSWORD: ${{ inputs.clojars-deploy-token }}
