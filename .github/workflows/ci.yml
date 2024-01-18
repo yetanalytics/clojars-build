@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - 'v*'
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      
+      - name: Get an env
+        uses: yetanalytics/action-setup-env@v1
+      
+      - name: Test build
+        run: make test-build
