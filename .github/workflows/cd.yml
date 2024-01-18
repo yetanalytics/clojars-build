@@ -1,0 +1,29 @@
+name: CD
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      
+      - name: Get an env
+        uses: yetanalytics/action-setup-env@v1
+      
+      - name: Extract version
+        id: version
+        run: echo version=${GITHUB_REF#refs\/tags\/v} >> $GITHUB_OUTPUT
+
+      - name: Build JAR
+        run: make build VERSION=${{ steps.version.output.version }} GITHUB_SHA=${{ github.sha }}
+      
+      - name: Deploy to Clojars
+        run: make deploy VERSION=${{ steps.version.output.version }}
+        env:
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_DEPLOY_TOKEN }}
