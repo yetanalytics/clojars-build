@@ -1,7 +1,6 @@
 {:paths ["src/main"]
  :deps
- {io.github.clojure/tools.build {:git/tag "v0.9.6"
-                                 :git/sha "8e78bcc"}
+ {io.github.clojure/tools.build {:mvn/version "0.9.6"}
   slipset/deps-deploy           {:mvn/version "0.2.0"}}
  :aliases
  {:build  {:exec-fn com.yetanalytics.clojars-build/jar}
