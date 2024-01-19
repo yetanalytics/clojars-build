@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - '*'
-    tags:
-      - 'v*'
 
 jobs:
   test-build:
@@ -19,3 +17,9 @@ jobs:
       
       - name: Test build
         run: make test-build
+      
+      - name: Test deploy
+        run: make test-deploy
+        env:
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_DEPLOY_TOKEN }}
